@@ -1,17 +1,12 @@
-import java.awt.Choice;
-import java.awt.Color;
-import java.awt.Image;
-import java.awt.event.ActionListener;
-
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
+import javax.swing.*;
+import java.awt.*;
 import java.awt.event.*;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JTextField;
+import java.sql.*;
 
 public class Login extends JFrame implements ActionListener {
     JButton login, cancel, signup;
+    JTextField username, password;
+    Choice loggingin;
 
     Login() {
         super("Login Page");// super must be first statement inside constructor
@@ -22,7 +17,7 @@ public class Login extends JFrame implements ActionListener {
         lblusername.setBounds(300, 20, 100, 20);// wrt frame not screen
         add(lblusername);
 
-        JTextField username = new JTextField();
+        username = new JTextField();
         username.setBounds(400, 20, 150, 20);
         add(username);
 
@@ -30,7 +25,7 @@ public class Login extends JFrame implements ActionListener {
         lblpassword.setBounds(300, 60, 100, 20);// wrt frame not screen
         add(lblpassword);
 
-        JTextField password = new JTextField();
+        password = new JTextField();
         password.setBounds(400, 60, 150, 20);
         add(password);
 
@@ -39,7 +34,7 @@ public class Login extends JFrame implements ActionListener {
         add(logginginas);
 
         // dropdown can be made using choice which is awt as well as jcombobox in swing
-        Choice loggingin = new Choice();
+        loggingin = new Choice();
         loggingin.add("Admin");
         loggingin.add("Customer");
         loggingin.setBounds(400, 100, 150, 20);
@@ -61,7 +56,6 @@ public class Login extends JFrame implements ActionListener {
 
         ImageIcon i5 = new ImageIcon(ClassLoader.getSystemResource("icon\\signup.png"));
         Image i6 = i5.getImage().getScaledInstance(16, 16, Image.SCALE_DEFAULT);
-
         signup = new JButton("Sign Up", new ImageIcon(i6));
         signup.setBounds(380, 200, 100, 20);
         signup.addActionListener(this);
@@ -82,6 +76,31 @@ public class Login extends JFrame implements ActionListener {
 
     public void actionPerformed(ActionEvent ae) {
         if (ae.getSource() == login) {
+            String susername = username.getText();
+            String spassword = password.getText();
+            String user = loggingin.getSelectedItem();
+
+            try {
+                Conn c = new Conn();
+                String query = "select * from login where username ='" + susername + "' and password = '" + spassword
+                        + "' and user = '" + user + "'";
+
+                ResultSet rs = c.s.executeQuery(query);
+
+                if (rs.next()) {
+                    String meter = rs.getString("meter_no");
+                    setVisible(false);
+                    new Project(user, meter);
+                } else {
+                    JOptionPane.showMessageDialog(null, "Invalid Login");
+                    username.setText("");
+                    password.setText("");
+
+                }
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
 
         } else if (ae.getSource() == cancel) {
             setVisible(false);

@@ -1,6 +1,6 @@
 import java.awt.*;
 import java.awt.event.*;
-
+import java.sql.*;
 import javax.swing.*;
 import javax.swing.border.*;
 
@@ -10,9 +10,6 @@ public class Signup extends JFrame implements ActionListener {
     JTextField meter, username, name, password;
 
     Signup() {
-        setSize(700, 400);
-        setLocation(450, 150);
-
         setBounds(450, 150, 700, 400);
         getContentPane().setBackground(Color.LIGHT_GRAY);
         setLayout(null);
@@ -41,10 +38,12 @@ public class Signup extends JFrame implements ActionListener {
         lblmeter.setBounds(100, 90, 140, 20);
         lblmeter.setForeground(Color.GRAY);
         lblmeter.setFont(new Font("Tahoma", Font.BOLD, 14));
+        lblmeter.setVisible(false);
         panel.add(lblmeter);
 
         meter = new JTextField();
         meter.setBounds(260, 90, 150, 20);
+        meter.setVisible(false);
         panel.add(meter);
 
         JLabel lblusername = new JLabel("Username ");
@@ -67,6 +66,24 @@ public class Signup extends JFrame implements ActionListener {
         name.setBounds(260, 170, 150, 20);
         panel.add(name);
 
+        meter.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusLost(FocusEvent fe) {
+                try {
+                    Conn c = new Conn();
+                    ResultSet rs = c.s.executeQuery("select * from login where meter_no = '" + meter.getText() + "'");
+                    if (rs.next()) {
+                        name.setText(rs.getString("name"));
+                    } else {
+                        name.setText("");
+                        JOptionPane.showMessageDialog(null, "Meter number not found");
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+
         JLabel lblpassword = new JLabel("Password ");
         lblpassword.setBounds(100, 210, 140, 20);
         lblpassword.setForeground(Color.GRAY);
@@ -75,6 +92,21 @@ public class Signup extends JFrame implements ActionListener {
         password = new JTextField();
         password.setBounds(260, 210, 150, 20);
         panel.add(password);
+
+        accountType.addItemListener(new ItemListener() {
+            public void itemStateChanged(ItemEvent ae) {
+                String user = accountType.getSelectedItem();
+                if (user.equals("Customer")) {
+                    lblmeter.setVisible(true);
+                    meter.setVisible(true);
+                    name.setEditable(false);
+                } else {
+                    lblmeter.setVisible(false);
+                    meter.setVisible(false);
+                    name.setEditable(true);
+                }
+            }
+        });
 
         create = new JButton("Create ");
         create.setBounds(140, 260, 120, 30);
@@ -108,25 +140,38 @@ public class Signup extends JFrame implements ActionListener {
             String spassword = password.getText();
             String smeter = meter.getText();
 
+            if (susername.isEmpty() || sname.isEmpty() || spassword.isEmpty()
+                    || (atype.equals("Customer") && smeter.isEmpty())) {
+                JOptionPane.showMessageDialog(null, "All fields must be filled");
+                return;
+            }
+
             try {
                 Conn c = new Conn();
-                String query = "insert into login values('" + smeter + "','" + susername + "','" + sname + "','"
-                        + spassword + "','" + atype + "')";
-                c.s.executeUpdate(query);
+
+                if (atype.equals("Admin")) {
+                    String query = "insert into login values('" + smeter + "','" + susername + "','" + sname + "','"
+                            + spassword + "','" + atype + "')";
+                    c.s.executeUpdate(query);
+                } else {
+                    String query = "update login set username = '" + susername + "', password = '" + spassword
+                            + "', user = '" + atype + "' where meter_no = '" + smeter + "'";
+                    int rowsUpdated = c.s.executeUpdate(query);
+                    if (rowsUpdated == 0) {
+                        query = "insert into login values('" + smeter + "','" + susername + "','" + sname + "','"
+                                + spassword + "','" + atype + "')";
+                        c.s.executeUpdate(query);
+                    }
+                }
 
                 JOptionPane.showMessageDialog(null, "Account Created Successfully");
-
                 setVisible(false);
                 new Login();
-
             } catch (Exception e) {
                 e.printStackTrace();
             }
-        }
-
-        else if (ae.getSource() == back) {
+        } else if (ae.getSource() == back) {
             setVisible(false);
-
             new Login();
         }
     }
